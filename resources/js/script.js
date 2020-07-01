@@ -1,67 +1,81 @@
-
 const SQUARE = 50;
-var head = [100, 0, 50, 50];
-var middle = [50, 0, 50, 50];
-var tail = [0, 0, 50, 50];
+const GAME_WIDTH = 1000;
+const GAME_HEIGHT = 500;
+
+class Snake {
+    constructor() {
+        this.head = [SQUARE * 2, SQUARE * 0];
+        this.body = [[SQUARE * 0, SQUARE * 0], [SQUARE * 1, SQUARE * 0], this.head];
+        this.horizontal = true;
+    }
+
+    move(dx, dy) {
+        if (dy === 0 && this.horizontal === true) {
+            return 0;
+        }
+        if (dx === 0 && this.horizontal !== true) {
+            return 0;
+        }
+
+        const newHead = [this.head[0] + dx, this.head[1] + dy];
+        if (newHead[0] >= GAME_WIDTH) { newHead[0] = 0; };
+        if (newHead[1] >= GAME_HEIGHT) { newHead[1] = 0 };
+        if (newHead[0] < 0) { newHead[0] = GAME_WIDTH - SQUARE };
+        if (newHead[1] < 0) { newHead[1] = GAME_HEIGHT - SQUARE };
+        this.body.shift();
+        this.body.push(newHead);
+        this.head = newHead;
+        this.horizontal = !this.horizontal;
+
+    }
+
+}
+
+var drawer = {
+    draw_rects: function (squares, surface, size = SQUARE, color = 'red') {
+        surface.fillStyle = color;
+        for (let square of squares) {
+            surface.beginPath();
+            surface.rect(...square, SQUARE, SQUARE);
+            surface.fill();
+        }
+    },
+    fill_screen: function (surface, surfaceW, surfaceH, color = 'white') {
+        surface.beginPath();
+        surface.fillStyle = color;
+        surface.rect(0, 0, surfaceW, surfaceH);
+        surface.fill();
+    },
+}
 
 var c = document.getElementById('myCanvas');
 var ctx = c.getContext('2d');
+snake = new Snake();
+drawer.draw_rects(snake.body, ctx);
 
-const snake = [tail, middle, head];
 
-function draw_rect(square) {
-    ctx.beginPath();
-    ctx.fillStyle = 'black';
-    ctx.rect(...square);
-    ctx.fill();
-}
-
-function fill_screen() {
-    ctx.beginPath();
-    ctx.fillStyle = 'white';
-    ctx.rect(0, 0, c.width, c.height)
-    ctx.fill();
-}
-
-function draw_snake() {
-    for (let element of snake) {
-        draw_rect(element);
-    }
-}
-
-function update_snake(arr, shift_x, shift_y) {
-    const new_head = [arr[arr.length - 1][0] + shift_x, arr[arr.length - 1][1] + shift_y, SQUARE, SQUARE];
-    arr.shift();
-    arr.push(new_head)
-}
-
-draw_snake();
 document.onkeydown = function (e) {
     switch (e.keyCode) {
         case 37:
-            fill_screen();
-            update_snake(snake, -50, 0);
-            draw_snake();
-            console.log(snake);
+            drawer.fill_screen(ctx, c.width, c.height);
+            snake.move(-50, 0);
+            drawer.draw_rects(snake.body, ctx)
             break;
 
         case 38:
-            fill_screen();
-            update_snake(snake, 0, -50);
-            draw_snake();
-            console.log(snake);
+            drawer.fill_screen(ctx, c.width, c.height);
+            snake.move(0, -50);
+            drawer.draw_rects(snake.body, ctx)
             break;
         case 39:
-            fill_screen();
-            update_snake(snake, 50, 0);
-            draw_snake();
-            console.log(snake);
+            drawer.fill_screen(ctx, c.width, c.height);
+            snake.move(50, 0);
+            drawer.draw_rects(snake.body, ctx)
             break;
         case 40:
-            fill_screen();
-            update_snake(snake, 0, 50);
-            draw_snake();
-            console.log(snake);
+            drawer.fill_screen(ctx, c.width, c.height);
+            snake.move(0, 50);
+            drawer.draw_rects(snake.body, ctx)
             break;
     }
 };
