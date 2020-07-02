@@ -1,85 +1,131 @@
 const SQUARE = 50;
-const GAME_WIDTH = 1000;
-const GAME_HEIGHT = 500;
+const GAME_WIDTH = 20;
+const GAME_HEIGHT = 10;
+const COLORS = ['white', 'red', 'green']
 
-class Snake {
-    constructor() {
-        this.head = [SQUARE * 2, SQUARE * 0];
-        this.body = [[SQUARE * 0, SQUARE * 0], [SQUARE * 1, SQUARE * 0], this.head];
-        this.horizontal = true;
+
+class Board {
+    constructor(width, height) {
+        this.board = [];
+        for (let i = 0; i < height; i++) {
+            for (let j = 0; j < width; j++) {
+                this.board.push([j, i, 0]);
+            }
+        }
     }
-
-    move(dx, dy) {
-        if (dy === 0 && this.horizontal === true) {
-            return 0;
+    fillBoard(arr) {
+        for (let element of arr) {
+            let col = element[0];
+            let row = element[1];
+            this.board[col + row * 20][2] = 1;
         }
-        if (dx === 0 && this.horizontal !== true) {
-            return 0;
-        }
-
-        const newHead = [this.head[0] + dx, this.head[1] + dy];
-        if (newHead[0] >= GAME_WIDTH) { newHead[0] = 0; };
-        if (newHead[1] >= GAME_HEIGHT) { newHead[1] = 0 };
-        if (newHead[0] < 0) { newHead[0] = GAME_WIDTH - SQUARE };
-        if (newHead[1] < 0) { newHead[1] = GAME_HEIGHT - SQUARE };
-        this.body.shift();
-        this.body.push(newHead);
-        this.head = newHead;
-        this.horizontal = !this.horizontal;
 
     }
+    clearBoard() {
+        for (let i = 0; i < this.board.length; i++) {
+            this.board[i][2] = 0;
+        }
+    }
+    placeFood() {
+        const free_space = this.board.filter(element => element[2] === 0);
+        const food_coords = free_space[Math.floor(Math.random() * free_space.length)];
+        this.board[food_coords[0] + food_coords[1] * 20][2] = 2;
+    }
 
-}
-
-var drawer = {
-    draw_rects: function (squares, surface, size = SQUARE, color = 'red') {
-        surface.fillStyle = color;
-        for (let square of squares) {
+    draw(surface, size = SQUARE) {
+        for (let element of this.board) {
+            let col, row, color;
+            [col, row, color] = [...element];
+            surface.fillStyle = COLORS[color];
             surface.beginPath();
-            surface.rect(...square, SQUARE, SQUARE);
+            surface.rect(col * size, row * size, size, size);
             surface.fill();
         }
-    },
-    fill_screen: function (surface, surfaceW, surfaceH, color = 'white') {
-        surface.beginPath();
-        surface.fillStyle = color;
-        surface.rect(0, 0, surfaceW, surfaceH);
-        surface.fill();
-    },
+    }
 }
+
+class Snake {
+    directions = {
+        37: [-1, 0],
+        38: [0, -1],
+        39: [1, 0],
+        40: [0, 1]
+    };
+    constructor() {
+        this.head = [4, 0];
+        this.body = [[0, 0], [1, 0], [2, 0], [3, 0], this.head];
+        this.newHead = [];
+        this.horizontal = true;
+        this.previous_move = this.directions[39];
+        this.isEating = false;
+    }
+
+    updateHead(dx, dy) {
+        this.newHead = [this.head[0] + dx, this.head[1] + dy];
+        if (this.newHead[0] >= GAME_WIDTH) { this.newHead[0] = 0; };
+        if (this.newHead[1] >= GAME_HEIGHT) { this.newHead[1] = 0 };
+        if (this.newHead[0] < 0) { this.newHead[0] = GAME_WIDTH - 1 };
+        if (this.newHead[1] < 0) { this.newHead[1] = GAME_HEIGHT - 1 };
+
+    }
+
+    canMove(dx, dy, manual = true) {
+        if (manual) {
+            if (dx === this.previous_move[0] || dx === this.previous_move[0] * -1) {
+                return false;
+            }
+        }
+        this.updateHead(dx, dy);
+        if (this.body.some(x => x[0] === this.newHead[0] && x[1] === this.newHead[1])) {
+            return false;
+        }
+        this.previous_move = [dx, dy];
+        return true;
+    }
+
+    move() {
+        this.body.shift();
+        this.body.push(this.newHead);
+        this.head = this.newHead;
+
+    }
+
+}
+
 
 var c = document.getElementById('myCanvas');
 var ctx = c.getContext('2d');
 snake = new Snake();
-drawer.draw_rects(snake.body, ctx);
+board = new Board(GAME_WIDTH, GAME_HEIGHT);
+board.fillBoard(snake.body);
+board.placeFood();
+board.draw(ctx);
 
+
+// function draw_snake() {
+//     drawer.fill_screen(ctx, c.width, c.height);
+//     if (snake.canMove(...snake.previous_move, manual = false)) {
+//         snake.move();
+//     };
+//     drawer.draw_rects(snake.body, ctx);
+// }
 
 document.onkeydown = function (e) {
-    switch (e.keyCode) {
-        case 37:
-            drawer.fill_screen(ctx, c.width, c.height);
-            snake.move(-50, 0);
-            drawer.draw_rects(snake.body, ctx)
-            break;
-
-        case 38:
-            drawer.fill_screen(ctx, c.width, c.height);
-            snake.move(0, -50);
-            drawer.draw_rects(snake.body, ctx)
-            break;
-        case 39:
-            drawer.fill_screen(ctx, c.width, c.height);
-            snake.move(50, 0);
-            drawer.draw_rects(snake.body, ctx)
-            break;
-        case 40:
-            drawer.fill_screen(ctx, c.width, c.height);
-            snake.move(0, 50);
-            drawer.draw_rects(snake.body, ctx)
-            break;
+    if (snake.canMove(...snake.directions[e.keyCode])) {
+        snake.move();
     }
-};
+    else {
+        console.log('dupa')
 
+    }
+    board.clearBoard();
+    board.fillBoard(snake.body);
+    board.draw(ctx);
+}
+
+
+
+//var a = setInterval(draw_snake, 500);
 
 
 
