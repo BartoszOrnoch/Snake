@@ -23,13 +23,16 @@ class Board {
     }
     clearBoard() {
         for (let i = 0; i < this.board.length; i++) {
-            this.board[i][2] = 0;
+            if (this.board[i][2] === 1) {
+                this.board[i][2] = 0;
+            }
         }
     }
     placeFood() {
         const free_space = this.board.filter(element => element[2] === 0);
         const food_coords = free_space[Math.floor(Math.random() * free_space.length)];
         this.board[food_coords[0] + food_coords[1] * 20][2] = 2;
+        return food_coords;
     }
 
     draw(surface, size = SQUARE) {
@@ -58,6 +61,7 @@ class Snake {
         this.horizontal = true;
         this.previous_move = this.directions[39];
         this.isEating = false;
+        this.isDead = false;
     }
 
     updateHead(dx, dy) {
@@ -70,13 +74,14 @@ class Snake {
     }
 
     canMove(dx, dy, manual = true) {
-        if (manual) {
-            if (dx === this.previous_move[0] || dx === this.previous_move[0] * -1) {
-                return false;
-            }
-        }
+        // if (manual) {
+        //     if (dx === this.previous_move[0] || dx === this.previous_move[0] * -1) {
+        //         return false;
+        //     }
+        // }
         this.updateHead(dx, dy);
         if (this.body.some(x => x[0] === this.newHead[0] && x[1] === this.newHead[1])) {
+            this.dead = true;
             return false;
         }
         this.previous_move = [dx, dy];
@@ -84,10 +89,25 @@ class Snake {
     }
 
     move() {
-        this.body.shift();
+        if (this.isEating) {
+            this.isEating = false;
+        }
+        else {
+            this.body.shift();
+        }
         this.body.push(this.newHead);
         this.head = this.newHead;
 
+    }
+    checkIfEating(food_coords) {
+        let hx, hy, fx, fy, rest;
+        [hx, hy, fx, fy, ...rest] = [...this.newHead, ...food_coords];
+        if (hx === fx && hy === fy) {
+            this.isEating = true;
+            console.log('zjadlem')
+            return true;
+        };
+        return false;
     }
 
 }
@@ -98,34 +118,24 @@ var ctx = c.getContext('2d');
 snake = new Snake();
 board = new Board(GAME_WIDTH, GAME_HEIGHT);
 board.fillBoard(snake.body);
-board.placeFood();
+let food = board.placeFood();
 board.draw(ctx);
 
 
-// function draw_snake() {
-//     drawer.fill_screen(ctx, c.width, c.height);
-//     if (snake.canMove(...snake.previous_move, manual = false)) {
-//         snake.move();
-//     };
-//     drawer.draw_rects(snake.body, ctx);
-// }
-
 document.onkeydown = function (e) {
-    if (snake.canMove(...snake.directions[e.keyCode])) {
+    console.log(snake.directions[e.keyCode]);
+    let direction = snake.directions[e.keyCode];
+    if (snake.canMove(...direction)) {
+        if (snake.checkIfEating(food)) {
+            food = board.placeFood();
+        };
         snake.move();
-    }
-    else {
-        console.log('dupa')
-
     }
     board.clearBoard();
     board.fillBoard(snake.body);
     board.draw(ctx);
 }
 
-
-
-//var a = setInterval(draw_snake, 500);
 
 
 
