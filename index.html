@@ -5,14 +5,28 @@
 
   <title>The HTML5 Herald</title>
 
-  <link rel="stylesheet" href="resources/styles.css?v=1.0">
+  <link rel="stylesheet" href="resources/css/styles.css">
 
 </head>
 
 <body>
-  <canvas id="myCanvas" width='1000' height='500' style="border:1px solid #000000;"></canvas>
-  <p id="score">0</p>
-  <p id="time">0</p>
+  <div id='mainMenu'>
+    <button type="button" id='startButton'>Start Game</button></br>
+    <button type="button" id='optionsButton'>Options</button></br>
+    <input type="radio" name="gameSize" id='gameSizeS'>S
+    <input type="radio" name="gameSize" id='gameSizeM' checked>M
+    <input type="radio" name="gameSize" id='gameSizeL'>L</br>
+    <input type="radio" name="gameSpeed" id='gameSpeedSlow'>Slow
+    <input type="radio" name="gameSpeed" id='gameSpeedMedium' checked>Medium
+    <input type="radio" name="gameSpeed" id='gameSpeedFast'>Fast
+  </div>
+  <div id='gameDiv'>
+    <canvas id="myCanvas" height='500' width='1000' style="border:1px solid #000000;"></canvas>
+    <p id="score">0</p>
+    <p id="time">0</p>
+  </div>
+
+
   <script src="resources/js/script.js"></script>
 </body>
 

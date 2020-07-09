@@ -1,5 +1,5 @@
 class Snake {
-    constructor() {
+    constructor(widthlimit, heightlimit) {
         this.head = [4, 0];
         this.body = [[0, 0], [1, 0], [2, 0], [3, 0], this.head];
         this.newHead = [];
@@ -7,14 +7,16 @@ class Snake {
         this.previous_move = [1, 0];
         this.isEating = false;
         this.isDead = false;
+        this.widthLimit = widthlimit;
+        this.heightLimit = heightlimit;
     }
 
     updateHead(dx, dy) {
         this.newHead = [this.head[0] + dx, this.head[1] + dy];
-        if (this.newHead[0] >= game.width) { this.newHead[0] = 0; };
-        if (this.newHead[1] >= game.height) { this.newHead[1] = 0 };
-        if (this.newHead[0] < 0) { this.newHead[0] = game.width - 1 };
-        if (this.newHead[1] < 0) { this.newHead[1] = game.height - 1 };
+        if (this.newHead[0] >= this.widthLimit) { this.newHead[0] = 0; };
+        if (this.newHead[1] >= this.heightLimit) { this.newHead[1] = 0 };
+        if (this.newHead[0] < 0) { this.newHead[0] = this.widthLimit - 1 };
+        if (this.newHead[1] < 0) { this.newHead[1] = this.heightLimit - 1 };
 
     }
 
@@ -37,6 +39,7 @@ class Snake {
         }
         this.body.push(this.newHead);
         this.head = this.newHead;
+        console.log(this.body);
 
     }
     checkIfEating(food_coords) {
@@ -57,13 +60,15 @@ class Board {
                 this.board.push([j, i, 0]);
             }
         }
-        this.foodCoords = [0, 0]
+        this.foodCoords = [0, 0];
+        this.boardwidth = width;
+        this.boardheight = height;
     }
     fillBoard(arr) {
         for (let element of arr) {
             let col = element[0];
             let row = element[1];
-            this.board[col + row * 20][2] = 1;
+            this.board[col + row * this.boardwidth][2] = 1;
         }
 
     }
@@ -77,48 +82,50 @@ class Board {
     placeFood() {
         const free_space = this.board.filter(element => element[2] === 0);
         this.foodCoords = free_space[Math.floor(Math.random() * free_space.length)];
-        this.board[this.foodCoords[0] + this.foodCoords[1] * 20][2] = 2;
+        this.board[this.foodCoords[0] + this.foodCoords[1] * this.boardwidth][2] = 2;
     }
 
-    draw(surface, size) {
+    draw(surface, size, colors) {
         for (let element of this.board) {
             let col, row, color;
             [col, row, color] = [...element];
-            surface.fillStyle = game.colors[color];
+            surface.fillStyle = colors[color];
             surface.beginPath();
             surface.rect(col * size, row * size, size, size);
+            //console.log([col * size, row * size, size, size]);
             surface.fill();
         }
     }
 }
 
-
-
 class Game {
 
-    constructor() {
-        this.squareSize = 50;
-        this.width = 20;
-        this.height = 10;
+    constructor(width, height, square, cavas, speed) {
+        this.squareSize = square;
+        this.width = width;
+        this.height = height;
         this.colors = ['white', 'red', 'green'];
-        this.snake = new Snake();
-        this.board = new Board(this.width, this.height);
-        this.canvas = document.getElementById('myCanvas');
-        this.surface = this.canvas.getContext('2d');
+        this.surface = canvas.getContext('2d');
         this.gameScoreBlock = document.getElementById('score');
         this.gameTimeBlock = document.getElementById('time');
         this.gameScore = 0;
         this.gameTime = 0;
         this.gameOver = false;
-        this.gameTimer = window.setInterval(() => { this.gameTime++, this.gameTimeBlock.innerHTML = this.gameTime }, 1000);
-        this.moveTimer = window.setInterval(() => { if (this.snake.canMove(...this.snake.previous_move)) { this.moveSnake() } }, 500);
-
     }
 
+    startGame() {
+        this.snake = new Snake(this.width, this.height);
+        this.board = new Board(this.width, this.height);
+        this.gameTimer = window.setInterval(() => { this.gameTime++, this.gameTimeBlock.innerHTML = this.gameTime }, 1000);
+        this.moveTimer = window.setInterval(() => { if (this.snake.canMove(...this.snake.previous_move)) { this.moveSnake() } }, 500);
+        this.board.placeFood();
+        this.drawGame();
+
+    }
     drawGame() {
         this.board.clearBoard();
         this.board.fillBoard(this.snake.body);
-        this.board.draw(this.surface, this.squareSize);
+        this.board.draw(this.surface, this.squareSize, this.colors);
     }
     moveSnake() {
         if (this.snake.checkIfEating(this.board.foodCoords)) {
@@ -151,6 +158,9 @@ class Game {
             if (this.snake.canMove(...directions[keyCode])) {
                 this.moveSnake();
             }
+            else {
+                console.log('gameOver')
+            }
         }
         return false;
     }
@@ -163,11 +173,65 @@ class Game {
     }
 }
 
+var gameDiv = document.getElementById('gameDiv');
+var menuDiv = document.getElementById('mainMenu');
+var startbutton = document.getElementById("startButton");
+var optionsButton = document.getElementById("optionsButton");
+var gameSizeS = document.getElementById("gameSizeS");
+var gameSizeM = document.getElementById("gameSizeM");
+var gameSizeL = document.getElementById("gameSizeL");
+var canvas = document.getElementById('myCanvas');
 
 
-game = new Game();
-game.board.placeFood();
-game.drawGame();
+
+// gameSizeS.onclick = function () {
+//     width = 10;
+//     height = 5;
+//     canvas.style.witdh = width * square;
+//     canvas.style.height = height * square;
+// }
+
+// gameSizeM.onclick = function () {
+//     width = 20;
+//     height = 10;
+//     canvas.style.witdh = 400;
+//     canvas.style.height = 200;
+// }
+var width = 20;
+var height = 10;
+var square = 50;
+
+gameSizeS.onclick = function () {
+    width = 10;
+    height = 5;
+    square = 50;
+    canvas.width = width * square;
+    canvas.height = height * square;
+}
+
+gameSizeM.onclick = function () {
+    width = 14;
+    height = 7;
+    square = 50;
+    canvas.width = width * square;
+    canvas.height = height * square;
+}
+
+gameSizeL.onclick = function () {
+    width = 20;
+    height = 10;
+    square = 50;
+    canvas.width = width * square;
+    canvas.height = height * square;
+}
+
+
+startbutton.onclick = function () {
+    gameDiv.style.display = 'block';
+    menuDiv.style.display = 'none';
+    game = new Game(width, height, square, 0);
+    game.startGame();
+};
 
 document.addEventListener('keydown', function (event) {
     game.handleInput(event.keyCode);
